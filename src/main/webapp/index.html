@@ -1,62 +1,102 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>juniper</title>
-<script src="scripts/jquery.min.js"></script>
-<script src="scripts/lodash.min.js"></script>
+    <meta charset="UTF-8">
+    <title>juniper</title>
+    <script src="scripts/jquery.min.js"></script>
+    <script src="scripts/lodash.min.js"></script>
 
-<script type="text/javascript">
-items = [];
-function updateList() {
-	$("#my-list").html("");
-	items.forEach(function (e) {
-		$("#my-list").append("<li>" + e + "</li>");
-	});
-}
+    <script type="text/javascript">
+        items = [];
+        var listTemplate = _ . template ("<li>" + "<%= i %>" + ". " + "<%= e %>" + "</li><button id=" + "<%= i %>" + "type=\"button\" onClick=\"deleteListItem(<%= i %>)\" >Delete</button>");
 
-function getListItems() {
-	$.ajax({
-        url : 'todo',
-        dataType : 'json',
-        success : function(r) {
-        	console.log(r);
-        	items = r;
-        	console.log(items);
-        	updateList();
+        function updateList() {
+            $("#my-list").html("");
+            items.forEach(function (e,i) {
+                $("#my-list").append(listTemplate({i: i, e: e}));
+
+            });
         }
-    });
-}
+        function getListItems() {
+            $.ajax({
+                url : 'todo',
+                dataType : 'json',
+                success : function(r) {
+                    console.log(r);
+                    items = r;
+                    console.log(items);
+                    updateList();
+                }
+            });
+        }
 
-function sendListItem() {
-    var s = $("#texttosend").val();
-    
-    $.post("todo", { texttosend: s}, function() {
-    	getListItems();
-    });
-}
+        function sendListItem() {
+            var s = $("#texttosend").val();
+            //^[a-zA-Z0-9_.-]*$
+            if(/^[a-zA-Z0-9_.-]*$/.test(s) == false) { return; }
+            $.post("todo", { texttosend: s}, function() {
+                getListItems();
+            });
+        }
 
-$(document).ready(function () {	
-	$("#my-list").append("<li>test");
-	getListItems();
-	
-	$("#send-item").on('click', function () {
-		sendListItem();
-	});
-});
-</script>
+        function deleteListItem(id) {
+            var s = $("#texttosend").val();
+            console.log("delete called");
+
+            $.ajax({
+                url: "todo" + '?' + $.param({"id": id}),
+                type: 'DELETE',
+                success: function(){
+                    getListItems();
+                }
+            });
+        }
+
+        function editListItem() {
+            var id = $("#textid").val();
+            var to = $("#textto").val();
+
+            $.ajax({
+                url: "todo" + '?' + $.param({"textid": id, "textto": to}),
+                type: 'PUT',
+                success: function(){
+                    getListItems();
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            $("#my-list").append("<li>test");
+            getListItems();
+
+            $("#send-item").on('click', function () {
+                sendListItem();
+            });
+            $("#delete-item").on('click', function () {
+                deleteListItem();
+            });
+            $("#edit-item").on('click', function () {
+                editListItem();
+            });
+        });
+
+    </script>
 </head>
 <body>
-<h2>Todo List</h2>
+<h2>Todo List!</h2>
 <p>
-<a href="todo">Todo Servlet</a>
+    <a href="todo">Todo Servlet</a>
 </p>
 
 <ul id="my-list"></ul>
 
 
 Enter your text: <input type="text" id="texttosend"><br>
-<button id="send-item" type="button" >Submit</button>
+<button id="send-item" type="button" >Submit</button><br><br>
+
+Text id: <input type="text" id="textid"><br> Edit to: <input type="text" id="textto"><br>
+<button id="edit-item" type="button" >Edit</button>
+
 
 </body>
 </html>
